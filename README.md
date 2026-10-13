@@ -2,6 +2,12 @@
 
 Delay Poligonal o "DP" es un plugin de audio VST3/AU que combina un delay estéreo con modo reverse, filtros, distorsión y dos secuenciadores circulares por pasos que deciden dónde se activa el delay
 
+Videos con ejemplos:
+https://drive.google.com/file/d/1oCuH8kdsxl92qwZiDBgehMhvMpcaAa3P/view?usp=sharing
+https://drive.google.com/file/d/1tdKNp1vO2XG4KNA6QSZ8SXnNTrOj886j/view?usp=sharing
+https://youtu.be/JZh6nxtTxzk
+https://youtu.be/b2c-JTtpbB8
+
 Introducción:
 Delay Poligonal o "DP" es un plugin de audio VST3 desarrollado con el framework JUCE que
 combina un delay estéreo con modo reverse, filtros, distorsión y dos secuenciadores circulares por
