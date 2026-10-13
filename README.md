@@ -1,8 +1,8 @@
-# Delay-poligonal
+# Delay Poligonal
 
 Delay Poligonal o "DP" es un plugin de audio VST3/AU que combina un delay estéreo con modo reverse, filtros, distorsión y dos secuenciadores circulares por pasos que deciden dónde se activa el delay
 
-Videos con ejemplos:
+## Videos con ejemplos:
 - [Introduccion (Drive)](https://drive.google.com/file/d/1oCuH8kdsxl92qwZiDBgehMhvMpcaAa3P/view?usp=sharing)
 
 - [Ejemplos (Drive)](https://drive.google.com/file/d/1tdKNp1vO2XG4KNA6QSZ8SXnNTrOj886j/view?usp=sharing)
@@ -11,7 +11,7 @@ Videos con ejemplos:
 
 - [![Ejemplos](https://img.youtube.com/vi/b2c-JTtpbB8/0.jpg)](https://youtu.be/b2c-JTtpbB8)
 
-Introducción:
+## Introducción:
 Delay Poligonal o "DP" es un plugin de audio VST3 desarrollado con el framework JUCE que
 combina un delay estéreo con modo reverse, filtros, distorsión y dos secuenciadores circulares por
 pasos que deciden dónde se activa el delay y dónde no, permitiendo crear figuras rítmicas
@@ -27,7 +27,7 @@ El trabajo fue hecho con la asistencia de la IA Claude, me resultó de mucha uti
 de fusionar lo hecho en JUCE y lo hecho en openFrameworks, y luego para resolver problemas de
 audio como ruidos, clicks.
 
-Características Principales
+## Características Principales
 
 Secuenciador por pasos: “DP” se encuentra en la intersección entre un eco y un secuenciador por
 pasos. El secuenciador que controla el delay se activa por detección de señal del audio entrante,
@@ -63,7 +63,7 @@ parámetros y los patrones creados en el secuenciador.
 Polígonos: visualización opcional que traza líneas entre los pasos activos del secuenciador,
 formando figuras geométricas.
 
-Arquitectura del Plugin
+## Arquitectura del Plugin
 
 El plugin está organizado en tres componentes principales que se comunican entre sí:
 PluginProcessor
@@ -71,25 +71,25 @@ Es el núcleo de procesamiento de audio. Se ejecuta en el thread de audio del DA
 Es dueño de todos los parámetros, los buffers de delay, los secuenciadores y los coeficientes del
 filtro. Nunca toca la interfaz gráfica.
 
-PluginEditor
+### PluginEditor
 
 Es la interfaz gráfica. Muestra sliders, combos, botones y los dos secuenciadores circulares. Se
 refresca a 30fps mediante un Timer de JUCE. Nunca toca audio. Lee el estado del Processor para
 dibujar y escribe en los parámetros cuando el usuario interactúa.
 
-StepSequencer
+### StepSequencer
 
 Clase compartida entre ambos. El Processor la llama desde el thread de audio (processSample) y
 el Editor la lee desde el hilo de UI (getters). La comunicación entre threads del ángulo del
 marcador usa std::atomic para evitar data races sin mutex.
 
-Camino de la señal
+### Camino de la señal
 
 Para cada muestra de audio, por canal, el procesamiento sigue esta secuencia:
 
 Modo Normal (Horario)
 
-Etapa Descripción
+## Etapa Descripción
 
 1. Entrada Se recibe la muestra cruda del DAW
 2. Distorsión applyDist(input, drive, mode) aplica la distorsión seleccionada
@@ -99,13 +99,13 @@ Etapa Descripción
 6. Escritura delayBuffer[writePos] = distorsión × gate + filtrado × feedback
 7. Mezcla final salida = dry × entrada + 1.6 × wet × filtrado × readGain
 
-Modo Reverse (Antihorario)
+### Modo Reverse (Antihorario)
 
 En modo reverse, el buffer se divide en dos segmentos que se alternan (ping-pong). Mientras uno
 se llena escribiendo hacia adelante, el otro se lee al revés. Cuando un segmento se completa, los
 roles se intercambian con la operación wSeg = 1 - wSeg.
 
-Buffer de Delay Circular
+### Buffer de Delay Circular
 El delay usa un buffer circular de 4 segundos por canal (maxDelaySamples = 4 × sampleRate).
 Dos punteros recorren el buffer:
 writePos: donde se escribe la muestra nueva. Avanza con writePos = (writePos + 1) %
@@ -115,23 +115,23 @@ readPos: donde se lee el eco. Se calcula como readPos = (writePos - delaySamples
 maxDelaySamples) % maxDelaySamples. El + maxDelaySamples evita valores negativos, ya que
 en C++ el operador módulo preserva el signo.
 
-Feedback
+### Feedback
 La retroalimentación se genera al escribir en el buffer no solo la entrada nueva, sino también la
 señal leída del buffer multiplicada por el coeficiente de feedback (0.0 a 0.99). Cada vuelta del
 buffer, el eco se multiplica nuevamente por feedback, decayendo exponencialmente. Con
 feedback 0.5, cada eco suena a la mitad del anterior.
 
-Noise Gate
+### Noise Gate
 Un gate automático con ataque instantáneo y release de 20ms evita que se escuche ruido del
 buffer cuando no hay señal significativa. Cuando la señal filtrada supera un umbral (0.0001),
 readGain sube a 1.0 inmediatamente. Cuando baja, readGain decrece gradualmente en 20ms.
 
-Secuenciador por Pasos
+### Secuenciador por Pasos
 Cada secuenciador mantiene un array de booleanos (activeSteps) donde true significa que el paso
 deja pasar audio y false lo silencia. El secuenciador no genera audio: actúa como gate y devuelve
 un valor de ganancia (0.0 o 1.0) que el Processor usa como multiplicador.
 
-Detección de Onset por RMS
+### Detección de Onset por RMS
 El secuenciador arranca automáticamente cuando detecta señal de entrada, con el objetivo de
 comportarse como un auténtico delay sin depender del transporte del DAW como ocurre con
 buena parte de los secuenciadores, pero se detiene mediante el stop del transporte. Calcula la
@@ -139,28 +139,28 @@ energía promedio (RMS) en una ventana deslizante de 10ms usando un buffer circu
 acumulador incremental. Cuando el RMS supera el umbral (0.01), el secuenciador arranca desde
 el paso 0.
 
-Avance de Pasos
+### Avance de Pasos
 Dos contadores anidados controlan el avance. El sampleCounter se incrementa en cada muestra
 de audio. Cuando alcanza stepLengthSamples (la duración del paso en muestras), se llama a
 advanceStep() que incrementa currentStep y resetea el contador. Es como los segundos que
 disparan los minutos en un reloj.
 
-Fade (Anti-click)
+### Fade (Anti-click)
 Para evitar clicks al cambiar entre paso activo y mudo, el secuenciador hace una rampa lineal de
 5ms entre el gain actual y el target. fadeIncrement = (targetGain - currentGain) /
 fadeLengthSamples. Esto suaviza las transiciones abruptas de 0 a 1 o de 1 a 0.
 
-Cálculo del Ángulo Visual
+### Cálculo del Ángulo Visual
 
 El marcador visual se calcula como una fracción del ciclo completo convertida a radianes. El
 progreso t = elapsed / totalSamples (0 a 1) se multiplica por 2π y se desplaza -π/2 para que el
 inicio quede en la posición de las 12 en el círculo.
 
-Distorsión
+### Distorsión
 Se aplica antes del secuenciador, sobre la señal de entrada. El parámetro Drive controla la
 intensidad (0 a 10) y hay tres modos disponibles:
 
-Modo Comportamiento
+### Modo Comportamiento
 
 Soft Clip: Saturación suave tipo overdrive.
 Fuzz: Recorte agresivo, distorsión tipo fuzz.
@@ -179,30 +179,30 @@ Las subdivisiones disponibles van desde 1/2 hasta 1/16T (con tresillos).
 El resultado se limita entre 1 muestra y maxDelaySamples/2 - 1 (el -1 es margen de seguridad
 para el modo reverse que usa dos segmentos).
 
-Sistema de Presets
+### Sistema de Presets
 
 Los presets se guardan en archivos .fsd. Se almacenan todos los parámetros de ambos canales,
 el pattern de pasos activos, el estado de link y la dirección de los secuenciadores. Al cargar un
 preset, el Editor sincroniza todos los controles visuales con los nuevos valores.
 
-Link entre Canales
+### Link entre Canales
 
 Cuando el botón Linked está activo, el canal R copia todos los parámetros y el patrón de pasos del
 canal L, resultando en un delay pseudo-mono donde ambos canales se comportan idénticamente.
 Cualquier cambio en L se refleja automáticamente en R y viceversa.
 
-Visualización de Polígonos
+### Visualización de Polígonos
 
 Funcionalidad visual opcional activable con el botón Polígonos. Traza líneas entre los pasos
 activos del secuenciador, formando figuras geométricas. Con los pasos 0, 4, 8 y 12 activos en un
 secuenciador de 16 pasos se forma un cuadrado; con 0, 5 y 10, un triángulo. El relleno es rosa
 semitransparente y el contorno rosa más visible, coherente con la estética del plugin.
 
-Tabla de Parámetros
+### Tabla de Parámetros
 
 Cada canal tiene los siguientes parámetros (los de R son idénticos a los de L):
 
-Parámetro Rango y descripción
+### Parámetro Rango y descripción
 
 Delay Time 10 – 2000 ms. Tiempo de delay en modo libre.
 Feedback 0.0 – 0.99. Intensidad de la retroalimentación.
@@ -217,7 +217,7 @@ Sync Division 1/2 a 1/16T. Subdivisión rítmica (solo en modo Sync).
 Direction >>>> (horario/normal) / <<<< (antihorario/reverse).
 Linked On/Off. Sincroniza canal R con L.
 
-Estructura de Archivos
+## Estructura de Archivos
 
 Archivo Función
 
